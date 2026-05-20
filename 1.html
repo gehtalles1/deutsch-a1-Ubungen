@@ -35,16 +35,23 @@
             <div id="game-progress" class="bg-gradient-to-r from-indigo-500 to-emerald-500 h-full w-0 transition-all duration-300"></div>
         </div>
 
-        <div id="arena-card" class="w-full bg-white rounded-3xl p-6 shadow-xl border border-slate-200/80 relative flex flex-col items-center min-h-[410px] justify-between transition-all">
-            <div class="w-full text-center py-2 flex flex-col items-center space-y-4">
+        <div id="arena-card" class="w-full bg-white rounded-3xl p-6 shadow-xl border border-slate-200/80 relative flex flex-col items-center min-h-[430px] justify-between transition-all">
+            <div class="w-full text-center py-2 flex flex-col items-center space-y-3">
                 <button id="btn-speaker" onclick="playCurrentAudio()" class="w-20 h-20 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-full flex items-center justify-center text-3xl shadow-lg shadow-indigo-600/20 transition-all border border-indigo-400/20">🔊</button>
-                <div id="question-ctx" class="text-sm text-slate-500 min-h-[24px] px-2 font-medium break-words w-full">点击喇叭听音</div>
+                
+                <div class="flex gap-1 bg-slate-100 p-1 rounded-xl text-[10px] font-bold text-slate-500 border border-slate-200/60 shadow-inner">
+                    <button id="route-google" onclick="changeAudioRoute('google')" class="px-2 py-1 rounded-lg transition-all">谷歌海外</button>
+                    <button id="route-youdao" onclick="changeAudioRoute('youdao')" class="px-2 py-1 rounded-lg transition-all">有道国内</button>
+                    <button id="route-native" onclick="changeAudioRoute('native')" class="px-2 py-1 rounded-lg transition-all">系统原生</button>
+                </div>
+
+                <div id="question-ctx" class="text-sm text-slate-500 min-h-[24px] px-2 font-medium break-words w-full pt-1">点击喇叭听音</div>
                 <div id="question-text" class="text-lg font-bold text-slate-800 bg-slate-50 p-4 rounded-xl text-center border border-slate-200 w-full leading-relaxed break-words hidden"></div>
             </div>
 
-            <div id="options-box" class="w-full grid grid-cols-1 gap-3 mt-4"></div>
+            <div id="options-box" class="w-full grid grid-cols-1 gap-3 mt-2"></div>
 
-            <div id="spell-box" class="w-full flex flex-col space-y-4 mt-4 hidden">
+            <div id="spell-box" class="w-full flex flex-col space-y-4 mt-2 hidden">
                 <div id="spell-preview" class="w-full text-center min-h-[48px] flex items-center justify-center flex-wrap gap-y-2 py-1"></div>
                 <div id="spell-chips" class="flex flex-wrap justify-center gap-2"></div>
                 <div class="flex justify-center pt-1">
@@ -79,7 +86,7 @@
             {w:"bestellen",t:"预订，点餐",s:"Wir möchten jetzt ______, bitte.",a:"bestellen"},
             {w:"der Brief",t:"信件",s:"Hier ist ein ______ für dich.",a:"Brief"},
             {w:"deutsch",t:"德语的",s:"Lernst du auch ______?",a:"Deutsch"},
-            {w:"einkaufen",t:"购物",s:"Ich muss for morgen ______.",a:"einkaufen"},
+            {w:"einkaufen",t:"购物",s:"Ich muss für morgen ______.",a:"einkaufen"},
             {w:"entschuldigen",t:"原谅，抱歉",s:"______ Sie bitte!",a:"Entschuldigen"},
             {w:"das Fahrrad",t:"自行车",s:"Mein ______ ist leider kaputt.",a:"Fahrrad"},
             {w:"fliegen",t:"飞，乘飞机",s:"Wir ______ am Sonntag nach Berlin.",a:"fliegen"},
@@ -88,7 +95,7 @@
             {w:"die Information",t:"信息，问讯处",s:"Wo ist die ______?",a:"Information"},
             {w:"jetzt",t:"现在",s:"______ machen wir eine kleine Pause.",a:"Jetzt"},
             {w:"kochen",t:"做饭",s:"Herr Müller kann sehr gut ______.",a:"kochen"},
-            {w:"langsam",t:"慢的",s:"Bitte sprechen Sie ______.",a:"langsam"},
+            {w:"langsam",t:"慢的",s:"Bitte spreche Sie ______.",a:"langsam"},
             {w:"nehmen",t:"拿，选用",s:"Ich ______ einen Apfelkuchen.",a:"nehme"},
             {w:"das Obst",t:"水果",s:"______ ist sehr gesund.",a:"Obst"},
             {w:"rauchen",t:"抽烟",s:"Hier darf man nicht ______.",a:"rauchen"},
@@ -137,11 +144,32 @@
 
         let currentMode = 'blitz', currentIndex = 0, currentPool = [], isVerifying = false;
         let answerProgress = [], clickedChipsStack = [], currentSlots = [], finalChunks = [];
-
-        // 🌟 【重构核心 1】全局唯一的音频实体单例，从根本上杜绝手机连接挂起和塞车
+        
+        // 全局单例音频播放器
         const globalAudioPlayer = new Audio();
+        
+        // 核心线路管理：海外环境默认推荐使用谷歌海外线，秒速加载长句
+        let currentRoute = localStorage.getItem('blitz_audio_route') || 'google';
 
-        // 🌟 【重构核心 2】专门应对 iOS/微信等严苛浏览器的“手势解锁”特权引擎
+        function updateRouteUI() {
+            ['google', 'youdao', 'native'].forEach(r => {
+                const btn = document.getElementById(`route-${r}`);
+                if (r === currentRoute) {
+                    btn.className = "px-2 py-1 rounded-lg transition-all bg-white text-indigo-600 shadow-sm";
+                } else {
+                    btn.className = "px-2 py-1 rounded-lg transition-all hover:text-slate-800 text-slate-400";
+                }
+            });
+        }
+
+        function changeAudioRoute(route) {
+            currentRoute = route;
+            localStorage.setItem('blitz_audio_route', route);
+            updateRouteUI();
+            playCurrentAudio(); // 切换线路后直接试听当前词，反馈极佳
+        }
+
+        // 手势单例解锁引擎
         function unlockMobileAudioEngine() {
             globalAudioPlayer.play().then(() => {
                 globalAudioPlayer.pause();
@@ -156,37 +184,47 @@
         function playCurrentAudio() {
             let item = currentPool[currentIndex]; if (!item) return;
             let isCtx = (currentMode === 'context');
+            
+            // 文本彻底清洁过滤，剔除句子下划线，避免发音引擎迷惑
             let cleanText = isCtx ? item.s.replace("______", item.a) : item.w;
-            cleanText = cleanText.replace(/\([^)]*\)/g, "").replace(/[!?,.]/g, "").trim();
+            cleanText = cleanText.replace(/\([^)]*\)/g, "").replace(/[!?,._]/g, "").trim();
 
             const speakerBtn = document.getElementById('btn-speaker');
             speakerBtn.innerText = "⏳";
 
-            // 停止任何可能未完的离线声音
+            // 彻底终止和重置系统离线引擎
             if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
 
-            // 构造全新无痛音源链接
-            let targetUrl = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(cleanText)}&le=de`;
+            // 触发原生离线发音
+            if (currentRoute === 'native') {
+                runImmediateFallback(cleanText);
+                return;
+            }
 
-            // 切换音源并立刻强制载入
+            // 构造差异化航线链接
+            let targetUrl = "";
+            if (currentRoute === 'google') {
+                targetUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=de&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
+            } else {
+                targetUrl = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(cleanText)}&le=de`;
+            }
+
             globalAudioPlayer.removeAttribute('src');
             globalAudioPlayer.src = targetUrl;
             globalAudioPlayer.load();
 
-            // 绑定高速响应事件
             globalAudioPlayer.onplaying = () => { speakerBtn.innerText = "🎵"; };
             globalAudioPlayer.onended = () => { speakerBtn.innerText = "🔊"; };
-            
-            // 如果网络出现意外卡死或出错，立刻转入本地同步调用兜底（不套用异步setTimeout以免手机端硬拦截）
-            globalAudioPlayer.onerror = () => { runImmediateFallback(cleanText); };
+            globalAudioPlayer.onerror = () => { 
+                console.log("当前网络线路故障，自动转入原生系统发音");
+                runImmediateFallback(cleanText); 
+            };
 
             globalAudioPlayer.play().catch(e => {
-                // 如果因特殊手势限制被中断，同样采用直接同步兜底
                 runImmediateFallback(cleanText);
             });
         }
 
-        // 🌟 同步无延迟离线发音引擎
         function runImmediateFallback(text) {
             const speakerBtn = document.getElementById('btn-speaker');
             if ('speechSynthesis' in window) {
@@ -217,6 +255,7 @@
             document.getElementById('settle-modal').classList.add('hidden');
             currentIndex = 0; isVerifying = false;
             currentPool = [...a1Vocabulary].sort(() => Math.random() - 0.5).slice(0, 20);
+            updateRouteUI();
             loadQuestion();
         }
 
