@@ -6,7 +6,7 @@
     <title>德语A1词汇高效练习坊 — DeutschBlitz</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Noto+Sans+SC:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Noto+Sans+SC:wght=400;700&display=swap');
         body { font-family: 'Noto Sans SC', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
         .card-shake { animation: shake 0.4s ease-in-out; }
         @keyframes shake {
@@ -79,7 +79,7 @@
             {w:"bestellen",t:"预订，点餐",s:"Wir möchten jetzt ______, bitte.",a:"bestellen"},
             {w:"der Brief",t:"信件",s:"Hier ist ein ______ für dich.",a:"Brief"},
             {w:"deutsch",t:"德语的",s:"Lernst du auch ______?",a:"Deutsch"},
-            {w:"einkaufen",t:"购物",s:"Ich muss für morgen ______.",a:"einkaufen"},
+            {w:"einkaufen",t:"购物",s:"Ich muss for morgen ______.",a:"einkaufen"},
             {w:"entschuldigen",t:"原谅，抱歉",s:"______ Sie bitte!",a:"Entschuldigen"},
             {w:"das Fahrrad",t:"自行车",s:"Mein ______ ist leider kaputt.",a:"Fahrrad"},
             {w:"fliegen",t:"飞，乘飞机",s:"Wir ______ am Sonntag nach Berlin.",a:"fliegen"},
@@ -138,24 +138,20 @@
         let currentMode = 'blitz', currentIndex = 0, currentPool = [], isVerifying = false;
         let answerProgress = [], clickedChipsStack = [], currentSlots = [], finalChunks = [];
 
-        // 【双缓冲控制核心】动态生成单题音频，拒绝开局塞车
-        function prepareAudioForIndex(idx) {
-            if (idx < 0 || idx >= currentPool.length) return;
-            let item = currentPool[idx];
-            
-            // 如果已经建过对象了，直接跳过
-            if (item.audioBlitz && item.audioContext) return;
+        // 🌟 【重构核心 1】全局唯一的音频实体单例，从根本上杜绝手机连接挂起和塞车
+        const globalAudioPlayer = new Audio();
 
-            let blitzText = item.w.replace(/\([^)]*\)/g, "").replace(/[!?,.]/g, "").trim();
-            let contextText = item.s.replace("______", item.a).replace(/\([^)]*\)/g, "").replace(/[!?,.]/g, "").trim();
-            
-            if (!item.audioBlitz) {
-                item.audioBlitz = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(blitzText)}&le=de`);
-            }
-            if (!item.audioContext) {
-                item.audioContext = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(contextText)}&le=de`);
-            }
+        // 🌟 【重构核心 2】专门应对 iOS/微信等严苛浏览器的“手势解锁”特权引擎
+        function unlockMobileAudioEngine() {
+            globalAudioPlayer.play().then(() => {
+                globalAudioPlayer.pause();
+                globalAudioPlayer.currentTime = 0;
+            }).catch(() => {});
+            document.removeEventListener('touchstart', unlockMobileAudioEngine);
+            document.removeEventListener('click', unlockMobileAudioEngine);
         }
+        document.addEventListener('touchstart', unlockMobileAudioEngine, { passive: true });
+        document.addEventListener('click', unlockMobileAudioEngine, { passive: true });
 
         function playCurrentAudio() {
             let item = currentPool[currentIndex]; if (!item) return;
@@ -166,55 +162,40 @@
             const speakerBtn = document.getElementById('btn-speaker');
             speakerBtn.innerText = "⏳";
 
-            // 强行暂停其他音频防止混音
-            currentPool.forEach(p => {
-                if(p.audioBlitz) p.audioBlitz.pause();
-                if(p.audioContext) p.audioContext.pause();
-            });
+            // 停止任何可能未完的离线声音
+            if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
 
-            let activeAudio = isCtx ? item.audioContext : item.audioBlitz;
+            // 构造全新无痛音源链接
+            let targetUrl = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(cleanText)}&le=de`;
+
+            // 切换音源并立刻强制载入
+            globalAudioPlayer.removeAttribute('src');
+            globalAudioPlayer.src = targetUrl;
+            globalAudioPlayer.load();
+
+            // 绑定高速响应事件
+            globalAudioPlayer.onplaying = () => { speakerBtn.innerText = "🎵"; };
+            globalAudioPlayer.onended = () => { speakerBtn.innerText = "🔊"; };
             
-            // 安全防御：如果缓冲对象因意外没建立，直接走离线发音
-            if (!activeAudio) {
-                runSpeechFallback(cleanText);
-                return;
-            }
+            // 如果网络出现意外卡死或出错，立刻转入本地同步调用兜底（不套用异步setTimeout以免手机端硬拦截）
+            globalAudioPlayer.onerror = () => { runImmediateFallback(cleanText); };
 
-            // 设置超时机制：如果网络音频 0.8秒内没开始播放，说明太卡了，立刻无缝切离线发音
-            let networkTimeout = setTimeout(() => {
-                console.log("有道网络响应慢，切换本地离线TTS");
-                activeAudio.pause();
-                runSpeechFallback(cleanText);
-            }, 800);
-
-            activeAudio.onplaying = () => { clearTimeout(networkTimeout); speakerBtn.innerText = "🎵"; };
-            activeAudio.onended = () => { speakerBtn.innerText = "🔊"; };
-            activeAudio.onerror = () => { clearTimeout(networkTimeout); runSpeechFallback(cleanText); };
-
-            activeAudio.currentTime = 0;
-            activeAudio.play().catch(e => {
-                clearTimeout(networkTimeout);
-                runSpeechFallback(cleanText);
+            globalAudioPlayer.play().catch(e => {
+                // 如果因特殊手势限制被中断，同样采用直接同步兜底
+                runImmediateFallback(cleanText);
             });
         }
 
-        // 完美的离线底层 TTS 兜底引擎
-        function runSpeechFallback(text) {
+        // 🌟 同步无延迟离线发音引擎
+        function runImmediateFallback(text) {
             const speakerBtn = document.getElementById('btn-speaker');
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
                 let utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'de-DE';
                 utterance.rate = 0.85;
-                
                 utterance.onstart = () => { speakerBtn.innerText = "🎵"; };
                 utterance.onend = () => { speakerBtn.innerText = "🔊"; };
                 utterance.onerror = () => { speakerBtn.innerText = "🔊"; };
-
-                let voices = window.speechSynthesis.getVoices();
-                let deVoice = voices.find(v => v.lang.toLowerCase().includes('de'));
-                if (deVoice) utterance.voice = deVoice;
-
                 window.speechSynthesis.speak(utterance);
             } else {
                 speakerBtn.innerText = "🔊";
@@ -235,10 +216,7 @@
             if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
             document.getElementById('settle-modal').classList.add('hidden');
             currentIndex = 0; isVerifying = false;
-            
-            // 每次洗牌抽取20个词
             currentPool = [...a1Vocabulary].sort(() => Math.random() - 0.5).slice(0, 20);
-            
             loadQuestion();
         }
 
@@ -250,12 +228,7 @@
         function loadQuestion() {
             if (currentIndex >= currentPool.length) { document.getElementById('settle-modal').classList.remove('hidden'); return; }
             updateDashboard(); isVerifying = false;
-
             document.getElementById('btn-speaker').innerText = "🔊";
-
-            // 【双缓冲加载机制】只预载当前题目和下一题，网络永远不塞车
-            prepareAudioForIndex(currentIndex);
-            prepareAudioForIndex(currentIndex + 1);
 
             const item = currentPool[currentIndex], obs = document.getElementById('options-box'), spb = document.getElementById('spell-box'), qctx = document.getElementById('question-ctx'), qtxt = document.getElementById('question-text');
             obs.innerHTML = ''; obs.classList.remove('pointer-events-none', 'hidden');
