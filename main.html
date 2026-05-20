@@ -98,21 +98,21 @@
                 </div>
 
                 <div onclick="go(2)" class="premium-card p-5 flex flex-col items-center text-center">
-                    <div class="w-12 h-12 bg-[#00D4FF] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">2</div>
+                    <div class="w-12 h-12 bg-[#FF9600] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">2</div>
+                    <h3 class="text-sm font-bold text-slate-800 leading-tight">再试一刀</h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">Kapitel 02</p>
+                </div>
+
+                <div onclick="go(3)" class="premium-card p-5 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-[#00D4FF] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">3</div>
                     <h3 class="text-sm font-bold text-slate-800 leading-tight">词性规律一眼破</h3>
                     <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">Nomen-Regeln</p>
                 </div>
 
-                <div onclick="go(3)" class="premium-card p-5 flex flex-col items-center text-center">
-                    <div class="w-12 h-12 bg-[#A855F7] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">3</div>
+                <div onclick="go(4)" class="premium-card p-5 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-[#A855F7] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">4</div>
                     <h3 class="text-sm font-bold text-slate-800 leading-tight">复数实验室</h3>
                     <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">Plural</p>
-                </div>
-
-                <div onclick="go(4)" class="premium-card p-5 flex flex-col items-center text-center">
-                    <div class="w-12 h-12 bg-[#F59E0B] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">4</div>
-                    <h3 class="text-sm font-bold text-slate-800 leading-tight">弱变化动词</h3>
-                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">Verbkonjugation</p>
                 </div>
             </div>
         </main>
@@ -127,10 +127,9 @@
         function go(n) {
             const pages = {
                 1: '1.html',
-                2: '02-classify.html',
-                3: '03-plural.html',
-                4: '04-verbs.html'
-                // 5: '05-xxx.html',  <-- 以后做好了这样往下加
+                2: '2.html',
+                3: '02-classify.html',
+                4: '03-plural.html'
             };
             if(pages[n]) window.location.href = pages[n];
         }
