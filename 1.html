@@ -145,19 +145,17 @@
         let currentMode = 'blitz', currentIndex = 0, currentPool = [], isVerifying = false;
         let answerProgress = [], clickedChipsStack = [], currentSlots = [], finalChunks = [];
         
-        // 全局单例音频播放器
-        const globalAudioPlayer = new Audio();
-        
-        // 核心线路管理：海外环境默认推荐使用谷歌海外线，秒速加载长句
+        // 全局音轨控制句柄和定时熔断器
+        let audioTimeoutNode = null;
         let currentRoute = localStorage.getItem('blitz_audio_route') || 'google';
 
         function updateRouteUI() {
             ['google', 'youdao', 'native'].forEach(r => {
                 const btn = document.getElementById(`route-${r}`);
-                if (r === currentRoute) {
-                    btn.className = "px-2 py-1 rounded-lg transition-all bg-white text-indigo-600 shadow-sm";
-                } else {
-                    btn.className = "px-2 py-1 rounded-lg transition-all hover:text-slate-800 text-slate-400";
+                if (btn) {
+                    btn.className = r === currentRoute 
+                        ? "px-2 py-1 rounded-lg transition-all bg-white text-indigo-600 shadow-sm"
+                        : "px-2 py-1 rounded-lg transition-all hover:text-slate-800 text-slate-400";
                 }
             });
         }
@@ -166,74 +164,88 @@
             currentRoute = route;
             localStorage.setItem('blitz_audio_route', route);
             updateRouteUI();
-            playCurrentAudio(); // 切换线路后直接试听当前词，反馈极佳
+            playCurrentAudio();
         }
-
-        // 手势单例解锁引擎
-        function unlockMobileAudioEngine() {
-            globalAudioPlayer.play().then(() => {
-                globalAudioPlayer.pause();
-                globalAudioPlayer.currentTime = 0;
-            }).catch(() => {});
-            document.removeEventListener('touchstart', unlockMobileAudioEngine);
-            document.removeEventListener('click', unlockMobileAudioEngine);
-        }
-        document.addEventListener('touchstart', unlockMobileAudioEngine, { passive: true });
-        document.addEventListener('click', unlockMobileAudioEngine, { passive: true });
 
         function playCurrentAudio() {
             let item = currentPool[currentIndex]; if (!item) return;
             let isCtx = (currentMode === 'context');
             
-            // 文本彻底清洁过滤，剔除句子下划线，避免发音引擎迷惑
+            // 文本彻底清洁清洁过滤
             let cleanText = isCtx ? item.s.replace("______", item.a) : item.w;
             cleanText = cleanText.replace(/\([^)]*\)/g, "").replace(/[!?,._]/g, "").trim();
 
             const speakerBtn = document.getElementById('btn-speaker');
             speakerBtn.innerText = "⏳";
 
-            // 彻底终止和重置系统离线引擎
-            if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
+            if (audioTimeoutNode) clearTimeout(audioTimeoutNode);
 
-            // 触发原生离线发音
+            // 1. 如果用户主动选择系统原生，直接同步进入本地语音引擎
             if (currentRoute === 'native') {
                 runImmediateFallback(cleanText);
                 return;
             }
 
-            // 构造差异化航线链接
+            // 2. 差异化构造网路流链接（谷歌改用高稳定度的 gtx 开放接口）
             let targetUrl = "";
             if (currentRoute === 'google') {
-                targetUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=de&client=tw-ob&q=${encodeURIComponent(cleanText)}`;
+                targetUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=de&client=gtx&q=${encodeURIComponent(cleanText)}`;
             } else {
                 targetUrl = `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(cleanText)}&le=de`;
             }
 
-            globalAudioPlayer.removeAttribute('src');
-            globalAudioPlayer.src = targetUrl;
-            globalAudioPlayer.load();
+            // ⚡核心改动：每次播放创建独立的音频实例，不复用，彻底规避 H5 挂起锁死大坑
+            const ephemeralAudio = new Audio();
 
-            globalAudioPlayer.onplaying = () => { speakerBtn.innerText = "🎵"; };
-            globalAudioPlayer.onended = () => { speakerBtn.innerText = "🔊"; };
-            globalAudioPlayer.onerror = () => { 
-                console.log("当前网络线路故障，自动转入原生系统发音");
-                runImmediateFallback(cleanText); 
+            // ⚡核心改动：1.5秒强行超时硬熔断防线。如果网络流卡住，1.5秒后强制切为系统离线语音发音
+            audioTimeoutNode = setTimeout(() => {
+                console.log("网络音频加载超时，硬熔断：自动无缝启用系统原生引擎兜底");
+                ephemeralAudio.src = ""; 
+                ephemeralAudio.load(); // 强制浏览器释放该网络挂起连接
+                runImmediateFallback(cleanText);
+            }, 1500);
+
+            ephemeralAudio.src = targetUrl;
+            
+            ephemeralAudio.onplaying = () => {
+                clearTimeout(audioTimeoutNode);
+                speakerBtn.innerText = "🎵";
+            };
+            
+            ephemeralAudio.onended = () => {
+                speakerBtn.innerText = "🔊";
+            };
+            
+            ephemeralAudio.onerror = () => {
+                clearTimeout(audioTimeoutNode);
+                runImmediateFallback(cleanText);
             };
 
-            globalAudioPlayer.play().catch(e => {
+            ephemeralAudio.play().catch(e => {
+                clearTimeout(audioTimeoutNode);
                 runImmediateFallback(cleanText);
             });
         }
 
+        // 🌟 强固版系统原生离线语音引擎
         function runImmediateFallback(text) {
             const speakerBtn = document.getElementById('btn-speaker');
             if ('speechSynthesis' in window) {
+                // 彻底移除高风险的强制 cancel()，防止部分移动端系统直接整体失声
                 let utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'de-DE';
-                utterance.rate = 0.85;
+                utterance.rate = 0.85; // 稍微慢速，语感更清晰
+                
+                if (window.speechSynthesis.getVoices) {
+                    let voices = window.speechSynthesis.getVoices();
+                    let deVoice = voices.find(v => v.lang.startsWith('de') || v.lang.includes('DE'));
+                    if (deVoice) utterance.voice = deVoice;
+                }
+
                 utterance.onstart = () => { speakerBtn.innerText = "🎵"; };
                 utterance.onend = () => { speakerBtn.innerText = "🔊"; };
                 utterance.onerror = () => { speakerBtn.innerText = "🔊"; };
+                
                 window.speechSynthesis.speak(utterance);
             } else {
                 speakerBtn.innerText = "🔊";
@@ -243,15 +255,17 @@
         function switchMode(mode) {
             if (isVerifying) return; currentMode = mode;
             ['blitz', 'spell', 'context'].forEach(m => {
-                document.getElementById(`btn-mode-${m}`).className = m === mode 
-                    ? "flex-1 py-3 px-2 rounded-xl text-xs font-bold text-center bg-indigo-600 text-white shadow-lg transition-all"
-                    : "flex-1 py-3 px-2 rounded-xl text-xs font-bold text-center bg-slate-200 text-slate-600 transition-all";
+                const btn = document.getElementById(`btn-mode-${m}`);
+                if(btn) {
+                    btn.className = m === mode 
+                        ? "flex-1 py-3 px-2 rounded-xl text-xs font-bold text-center bg-indigo-600 text-white shadow-lg transition-all"
+                        : "flex-1 py-3 px-2 rounded-xl text-xs font-bold text-center bg-slate-200 text-slate-600 transition-all";
+                }
             });
             restartGame();
         }
 
         function restartGame() {
-            if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
             document.getElementById('settle-modal').classList.add('hidden');
             currentIndex = 0; isVerifying = false;
             currentPool = [...a1Vocabulary].sort(() => Math.random() - 0.5).slice(0, 20);
