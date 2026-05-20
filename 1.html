@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>德语A1词汇高效练习坊 — DeutschBlitz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Noto+Sans+SC:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .card-shake { animation: shake 0.4s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <header class="p-4 bg-white/90 backdrop-blur border-b border-slate-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+        <div class="flex items-center space-x-1">
+            <button onclick="window.location.href='main.html'" class="py-1.5 px-3 mr-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 font-medium rounded-xl text-xs transition-all border border-slate-300/40 flex items-center">
+                ← 返回
+            </button>
+            <h1 class="text-base font-bold bg-gradient-to-r from-indigo-600 to-emerald-600 bg-clip-text text-transparent">DeutschBlitz A1</h1>
+        </div>
+        <div class="text-slate-500 text-xs font-bold tracking-wide">
+            <span id="progress-text">进度: 0 / 20</span>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col items-center justify-center p-4 max-w-md w-full mx-auto">
+        <div class="w-full bg-slate-200 h-2 rounded-full mb-6 overflow-hidden border border-slate-300/20">
+            <div id="game-progress" class="bg-gradient-to-r from-indigo-500 to-emerald-500 h-full w-0 transition-all duration-300"></div>
+        </div>
+
+        <div id="arena-card" class="w-full bg-white rounded-3xl p-6 shadow-xl border border-slate-200/80 relative flex flex-col items-center min-h-[410px] justify-between transition-all">
+            <div class="w-full text-center py-2 flex flex-col items-center space-y-4">
+                <button id="btn-speaker" onclick="playCurrentAudio()" class="w-20 h-20 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-full flex items-center justify-center text-3xl shadow-lg shadow-indigo-600/20 transition-all border border-indigo-400/20">🔊</button>
+                <div id="question-ctx" class="text-sm text-slate-500 min-h-[24px] px-2 font-medium break-words w-full">点击喇叭听音</div>
+                <div id="question-text" class="text-lg font-bold text-slate-800 bg-slate-50 p-4 rounded-xl text-center border border-slate-200 w-full leading-relaxed break-words hidden"></div>
+            </div>
+
+            <div id="options-box" class="w-full grid grid-cols-1 gap-3 mt-4"></div>
+
+            <div id="spell-box" class="w-full flex flex-col space-y-4 mt-4 hidden">
+                <div id="spell-preview" class="w-full text-center min-h-[48px] flex items-center justify-center flex-wrap gap-y-2 py-1"></div>
+                <div id="spell-chips" class="flex flex-wrap justify-center gap-2"></div>
+                <div class="flex justify-center pt-1">
+                    <button onclick="undoLastSpell()" id="btn-undo" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 font-bold text-xs rounded-xl transition-all border border-slate-200 flex items-center gap-1">
+                        ⌫ 撤回一步
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="p-4 max-w-md w-full mx-auto flex gap-3">
+        <button onclick="switchMode('blitz')" id="btn-mode-blitz" class="flex-1 py-3 px-2 rounded-xl text-xs font-bold text-center bg-indigo-600 text-white shadow-lg transition-all">🔊 听音辨意</button>
+        <button onclick="switchMode('spell')" id="btn-mode-spell" class="flex-1 py-3 px-2 rounded-xl text-xs font-bold text-center bg-slate-200 text-slate-600 transition-all">🧩 字母拼词</button>
+        <button onclick="switchMode('context')" id="btn-mode-context" class="flex-1 py-3 px-2 rounded-xl text-xs font-bold text-center bg-slate-200 text-slate-600 transition-all">📖 语境填空</button>
+    </footer>
+
+    <div id="settle-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white border border-slate-200 p-8 rounded-3xl w-full max-w-sm text-center shadow-2xl">
+            <span class="text-5xl">🎉</span>
+            <h3 class="text-2xl font-bold mt-4 text-emerald-600">练习完成!</h3>
+            <p class="text-slate-500 text-sm mt-2 mb-6">恭喜！本轮随机抽选的20个核心词汇已全部顺利练习完毕。</p>
+            <button onclick="restartGame()" class="w-full bg-gradient-to-r from-indigo-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-xl hover:opacity-90 active:scale-95 transition-all">再来一局</button>
+        </div>
+    </div>
+
+    <script>
+        const a1Vocabulary = [
+            {w:"der Arzt",t:"医生（男）",s:"Ich muss zum ______ gehen.",a:"Arzt"},
+            {w:"abholen",t:"接，取",s:"Wann kann ich den Schrank ______?",a:"abholen"},
+            {w:"die Bäckerei",t:"面包店",s:"Ich gehe schnell zur ______.",a:"Bäckerei"},
+            {w:"bestellen",t:"预订，点餐",s:"Wir möchten jetzt ______, bitte.",a:"bestellen"},
+            {w:"der Brief",t:"信件",s:"Hier ist ein ______ für dich.",a:"Brief"},
+            {w:"deutsch",t:"德语的",s:"Lernst du auch ______?",a:"Deutsch"},
+            {w:"einkaufen",t:"购物",s:"Ich muss für morgen ______.",a:"einkaufen"},
+            {w:"entschuldigen",t:"原谅，抱歉",s:"______ Sie bitte!",a:"Entschuldigen"},
+            {w:"das Fahrrad",t:"自行车",s:"Mein ______ ist leider kaputt.",a:"Fahrrad"},
+            {w:"fliegen",t:"飞，乘飞机",s:"Wir ______ am Sonntag nach Berlin.",a:"fliegen"},
+            {w:"das Gemüse",t:"蔬菜",s:"Obst und ______ kaufe ich auf dem Markt.",a:"Gemüse"},
+            {w:"helfen",t:"帮助",s:"Können Sie mir ______?",a:"helfen"},
+            {w:"die Information",t:"信息，问讯处",s:"Wo ist die ______?",a:"Information"},
+            {w:"jetzt",t:"现在",s:"______ machen wir eine kleine Pause.",a:"Jetzt"},
+            {w:"kochen",t:"做饭",s:"Herr Müller kann sehr gut ______.",a:"kochen"},
+            {w:"langsam",t:"慢的",s:"Bitte sprechen Sie ______.",a:"langsam"},
+            {w:"nehmen",t:"拿，选用",s:"Ich ______ einen Apfelkuchen.",a:"nehme"},
+            {w:"das Obst",t:"水果",s:"______ ist sehr gesund.",a:"Obst"},
+            {w:"rauchen",t:"抽烟",s:"Hier darf man nicht ______.",a:"rauchen"},
+            {w:"schreiben",t:"写",s:"Er ______ eine E-Mail.",a:"schreibt"},
+            {w:"trinken",t:"喝",s:"Was möchten Sie ______?",a:"trinken"},
+            {w:"verstehen",t:"理解，明白",s:"Ich ______ diesen Satz nicht.",a:"verstehe"},
+            {w:"wohnen",t:"居住",s:"Wo ______ Sie jetzt?",a:"wohnen"},
+            {w:"zahlen",t:"付款",s:"______ bitte!",a:"Zahlen"},
+            {w:"der Zug",t:"火车",s:"Der ______ kommt pünktlich an.",a:"Zug"},
+            {w:"das Auto",t:"汽车",s:"Mein ______ ist blau.",a:"Auto"},
+            {w:"die Adresse",t:"地址",s:"Wie ist Ihre ______?",a:"Adresse"},
+            {w:"anrufen",t:"打电话",s:"Ich ______ dich morgen an.",a:"rufe"},
+            {w:"arbeiten",t:"工作",s:"Er ______ bei Siemens.",a:"arbeitet"},
+            {w:"der Bahnhof",t:"火车站",s:"Wo ist der ______?",a:"Bahnhof"},
+            {w:"das Bier",t:"啤酒",s:"Ein ______ bitte!",a:"Bier"},
+            {w:"billig",t:"便宜的",s:"Das Buch ist sehr ______.",a:"billig"},
+            {w:"die Blume",t:"花",s:"Das ist eine schöne ______.",a:"Blume"},
+            {w:"bringen",t:"带来",s:"______ Sie mir einen Kaffee?",a:"Bringen"},
+            {w:"das Brot",t:"面包",s:"Ich kaufe ein ______.",a:"Brot"},
+            {w:"der Computer",t:"电脑",s:"Mein ______ ist neu.",a:"Computer"},
+            {w:"essen",t:"吃",s:"Was ______ Sie gern?",a:"essen"},
+            {w:"fahren",t:"乘车/行驶",s:"Wir ______ mit dem Bus.",a:"fahren"},
+            {w:"fragen",t:"提问",s:"Darf ich Sie etwas ______?",a:"fragen"},
+            {w:"das Geld",t:"钱",s:"Ich habe kein ______.",a:"Geld"},
+            {w:"groß",t:"大的",s:"Das Haus ist sehr ______.",a:"groß"},
+            {w:"gut",t:"好的",s:"Mir geht es ______.",a:"gut"},
+            {w:"heißen",t:"名叫",s:"Wie ______ Sie?",a:"heißen"},
+            {w:"das Hobby",t:"爱好",s:"Mein ______ ist Schwimmen.",a:"Hobby"},
+            {w:"das Hotel",t:"酒店",s:"Wo ist das ______?",a:"Hotel"},
+            {w:"kaufen",t:"购买",s:"Ich ______ ein Buch.",a:"kaufe"},
+            {w:"das Kind",t:"孩子",s:"Das ______ spielt im Garten.",a:"Kind"},
+            {w:"klein",t:"小的",s:"Die Wohnung ist sehr ______.",a:"klein"},
+            {w:"kommen",t:"来",s:"Woher ______ Sie?",a:"kommen"},
+            {w:"leben",t:"生活",s:"Meine Eltern ______ in Paris.",a:"leben"},
+            {w:"lesen",t:"读",s:"Ich ______ ein Buch.",a:"lese"},
+            {w:"machen",t:"做",s:"Was ______ Sie am Wochenende?",a:"machen"},
+            {w:"der Name",t:"名字",s:"Mein ______ ist Thomas.",a:"Name"},
+            {w:"neu",t:"新的",s:"Das Auto ist ganz ______.",a:"neu"},
+            {w:"die Schule",t:"学校",s:"Die Kinder gehen zur ______.",a:"Schule"},
+            {w:"sprechen",t:"说（语言）",s:"______ Sie Deutsch?",a:"Sprechen"},
+            {w:"suchen",t:"寻找",s:"Ich ______ meine Brille.",a:"suche"},
+            {w:"das Wasser",t:"水",s:"Ein Glas ______, bitte.",a:"Wasser"},
+            {w:"die Zeitung",t:"报纸",s:"Er liest die ______.",a:"Zeitung"},
+            {w:"das Zimmer",t:"房间",s:"Das ______ ist sehr hell.",a:"Zimmer"}
+        ];
+
+        let currentMode = 'blitz', currentIndex = 0, currentPool = [], isVerifying = false;
+        let answerProgress = [], clickedChipsStack = [], currentSlots = [], finalChunks = [];
+
+        // 【双缓冲控制核心】动态生成单题音频，拒绝开局塞车
+        function prepareAudioForIndex(idx) {
+            if (idx < 0 || idx >= currentPool.length) return;
+            let item = currentPool[idx];
+            
+            // 如果已经建过对象了，直接跳过
+            if (item.audioBlitz && item.audioContext) return;
+
+            let blitzText = item.w.replace(/\([^)]*\)/g, "").replace(/[!?,.]/g, "").trim();
+            let contextText = item.s.replace("______", item.a).replace(/\([^)]*\)/g, "").replace(/[!?,.]/g, "").trim();
+            
+            if (!item.audioBlitz) {
+                item.audioBlitz = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(blitzText)}&le=de`);
+            }
+            if (!item.audioContext) {
+                item.audioContext = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(contextText)}&le=de`);
+            }
+        }
+
+        function playCurrentAudio() {
+            let item = currentPool[currentIndex]; if (!item) return;
+            let isCtx = (currentMode === 'context');
+            let cleanText = isCtx ? item.s.replace("______", item.a) : item.w;
+            cleanText = cleanText.replace(/\([^)]*\)/g, "").replace(/[!?,.]/g, "").trim();
+
+            const speakerBtn = document.getElementById('btn-speaker');
+            speakerBtn.innerText = "⏳";
+
+            // 强行暂停其他音频防止混音
+            currentPool.forEach(p => {
+                if(p.audioBlitz) p.audioBlitz.pause();
+                if(p.audioContext) p.audioContext.pause();
+            });
+
+            let activeAudio = isCtx ? item.audioContext : item.audioBlitz;
+            
+            // 安全防御：如果缓冲对象因意外没建立，直接走离线发音
+            if (!activeAudio) {
+                runSpeechFallback(cleanText);
+                return;
+            }
+
+            // 设置超时机制：如果网络音频 0.8秒内没开始播放，说明太卡了，立刻无缝切离线发音
+            let networkTimeout = setTimeout(() => {
+                console.log("有道网络响应慢，切换本地离线TTS");
+                activeAudio.pause();
+                runSpeechFallback(cleanText);
+            }, 800);
+
+            activeAudio.onplaying = () => { clearTimeout(networkTimeout); speakerBtn.innerText = "🎵"; };
+            activeAudio.onended = () => { speakerBtn.innerText = "🔊"; };
+            activeAudio.onerror = () => { clearTimeout(networkTimeout); runSpeechFallback(cleanText); };
+
+            activeAudio.currentTime = 0;
+            activeAudio.play().catch(e => {
+                clearTimeout(networkTimeout);
+                runSpeechFallback(cleanText);
+            });
+        }
+
+        // 完美的离线底层 TTS 兜底引擎
+        function runSpeechFallback(text) {
+            const speakerBtn = document.getElementById('btn-speaker');
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                let utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'de-DE';
+                utterance.rate = 0.85;
+                
+                utterance.onstart = () => { speakerBtn.innerText = "🎵"; };
+                utterance.onend = () => { speakerBtn.innerText = "🔊"; };
+                utterance.onerror = () => { speakerBtn.innerText = "🔊"; };
+
+                let voices = window.speechSynthesis.getVoices();
+                let deVoice = voices.find(v => v.lang.toLowerCase().includes('de'));
+                if (deVoice) utterance.voice = deVoice;
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                speakerBtn.innerText = "🔊";
+            }
+        }
+
+        function switchMode(mode) {
+            if (isVerifying) return; currentMode = mode;
+            ['blitz', 'spell', 'context'].forEach(m => {
+                document.getElementById(`btn-mode-${m}`).className = m === mode 
+                    ? "flex-1 py-3 px-2 rounded-xl text-xs font-bold text-center bg-indigo-600 text-white shadow-lg transition-all"
+                    : "flex-1 py-3 px-2 rounded-xl text-xs font-bold text-center bg-slate-200 text-slate-600 transition-all";
+            });
+            restartGame();
+        }
+
+        function restartGame() {
+            if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); }
+            document.getElementById('settle-modal').classList.add('hidden');
+            currentIndex = 0; isVerifying = false;
+            
+            // 每次洗牌抽取20个词
+            currentPool = [...a1Vocabulary].sort(() => Math.random() - 0.5).slice(0, 20);
+            
+            loadQuestion();
+        }
+
+        function updateDashboard() {
+            document.getElementById('progress-text').innerText = `进度: ${currentIndex} / ${currentPool.length}`;
+            document.getElementById('game-progress').style.width = `${(currentIndex / currentPool.length) * 100}%`;
+        }
+
+        function loadQuestion() {
+            if (currentIndex >= currentPool.length) { document.getElementById('settle-modal').classList.remove('hidden'); return; }
+            updateDashboard(); isVerifying = false;
+
+            document.getElementById('btn-speaker').innerText = "🔊";
+
+            // 【双缓冲加载机制】只预载当前题目和下一题，网络永远不塞车
+            prepareAudioForIndex(currentIndex);
+            prepareAudioForIndex(currentIndex + 1);
+
+            const item = currentPool[currentIndex], obs = document.getElementById('options-box'), spb = document.getElementById('spell-box'), qctx = document.getElementById('question-ctx'), qtxt = document.getElementById('question-text');
+            obs.innerHTML = ''; obs.classList.remove('pointer-events-none', 'hidden');
+            document.getElementById('spell-preview').innerHTML = ''; document.getElementById('spell-chips').innerHTML = '';
+            spb.classList.add('hidden'); qtxt.classList.add('hidden');
+
+            if (currentMode === 'blitz') {
+                qctx.innerHTML = "🎧 听德语发音，选出正确的中文释义：";
+                let choices = [item.t];
+                while (choices.length < 4) {
+                    let r = a1Vocabulary[Math.floor(Math.random() * a1Vocabulary.length)].t;
+                    if (!choices.includes(r)) choices.push(r);
+                }
+                choices.sort(() => Math.random() - 0.5).forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left py-4 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-base font-medium transition-all active:scale-[0.98] text-slate-700";
+                    btn.innerText = c;
+                    btn.onclick = () => handleBlitzAnswer(c === item.t, btn, item);
+                    obs.appendChild(btn);
+                });
+            } 
+            else if (currentMode === 'spell') {
+                qctx.innerHTML = `🧩 拼出下方词汇的完整拼写：<br><b class="text-indigo-600 text-lg mt-1 block">${item.t}</b>`;
+                obs.classList.add('hidden'); spb.classList.remove('hidden');
+                
+                answerProgress = []; clickedChipsStack = []; currentSlots = []; finalChunks = [];
+                let art = "", main = item.w;
+                if (item.w.startsWith("der ") || item.w.startsWith("die ") || item.w.startsWith("das ")) { art = item.w.substring(0, 3); main = item.w.substring(4); }
+                if (art) finalChunks.push(art); for (let l of main) { if(l.trim()) finalChunks.push(l); }
+                
+                if (art) {
+                    let s = document.createElement('span'); s.className = "mr-4 border-b-2 border-slate-300 px-3 h-8 inline-block text-center text-slate-400 font-bold min-w-[44px] text-base transition-all";
+                    document.getElementById('spell-preview').appendChild(s); currentSlots.push(s);
+                }
+                let container = document.createElement('div'); container.className = "inline-flex items-center flex-wrap justify-center";
+                document.getElementById('spell-preview').appendChild(container);
+                for (let i = 0; i < main.length; i++) {
+                    if (!main[i].trim()) continue;
+                    let s = document.createElement('span'); s.className = "border-b-2 border-slate-300 w-5 h-8 inline-block mx-[1px] text-center text-slate-400 font-bold text-base transition-all";
+                    container.appendChild(s); currentSlots.push(s);
+                }
+
+                [...finalChunks].sort(() => Math.random() - 0.5).forEach(ch => {
+                    const chip = document.createElement('button');
+                    chip.className = "py-2 px-3.5 rounded-xl bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 font-bold text-base text-indigo-700 active:scale-90 transition-all";
+                    chip.innerText = ch;
+                    chip.onclick = () => {
+                        if (isVerifying) return;
+                        chip.classList.add('opacity-10', 'pointer-events-none');
+                        clickedChipsStack.push(chip);
+                        
+                        let ts = currentSlots[answerProgress.length]; ts.innerText = ch;
+                        ts.classList.replace('text-slate-400', 'text-indigo-600'); ts.classList.replace('border-slate-300', 'border-indigo-500');
+                        answerProgress.push(ch);
+
+                        if (answerProgress.length === finalChunks.length) {
+                            isVerifying = true;
+                            let userStr = art ? answerProgress[0] + " " + answerProgress.slice(1).join("") : answerProgress.join("");
+                            if (userStr === item.w) {
+                                currentSlots.forEach(s => { s.classList.replace('text-indigo-600', 'text-emerald-600'); s.classList.replace('border-indigo-500', 'border-emerald-500'); });
+                                playBeep(true); 
+                                setTimeout(() => { currentIndex++; loadQuestion(); }, 3000);
+                            } else {
+                                setTimeout(() => {
+                                    document.getElementById('arena-card').classList.add('card-shake', 'border-rose-500');
+                                    currentSlots.forEach(s => { s.classList.replace('text-indigo-600', 'text-rose-600'); s.classList.replace('border-indigo-500', 'border-rose-500'); });
+                                    playBeep(false); setTimeout(() => { document.getElementById('arena-card').classList.remove('card-shake', 'border-rose-500'); loadQuestion(); }, 800);
+                                }, 200);
+                            }
+                        }
+                    };
+                    document.getElementById('spell-chips').appendChild(chip);
+                });
+            } 
+            else if (currentMode === 'context') {
+                qctx.innerHTML = "📖 听整句德语例句，找出填入空缺处的正确词：";
+                qtxt.classList.remove('hidden'); qtxt.innerText = item.s;
+                let choices = [item.a];
+                while (choices.length < 4) {
+                    let r = a1Vocabulary[Math.floor(Math.random() * a1Vocabulary.length)].a;
+                    if (!choices.includes(r)) choices.push(r);
+                }
+                choices.sort(() => Math.random() - 0.5).forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left py-3 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-base font-bold transition-all active:scale-[0.98] text-slate-700";
+                    btn.innerText = c;
+                    btn.onclick = () => handleContextAnswer(c === item.a, btn, item);
+                    obs.appendChild(btn);
+                });
+            }
+        }
+
+        function undoLastSpell() {
+            if (isVerifying || clickedChipsStack.length === 0) return;
+            const lastChip = clickedChipsStack.pop();
+            lastChip.classList.remove('opacity-10', 'pointer-events-none');
+            
+            answerProgress.pop();
+            let targetSpan = currentSlots[answerProgress.length];
+            targetSpan.innerText = "";
+            targetSpan.classList.remove('text-indigo-600', 'border-indigo-500');
+            targetSpan.classList.add('text-slate-400', 'border-slate-300');
+        }
+
+        function handleBlitzAnswer(isCorrect, selectedBtn, item) {
+            if (isVerifying) return; isVerifying = true;
+            const card = document.getElementById('arena-card'), obs = document.getElementById('options-box'), qctx = document.getElementById('question-ctx');
+            obs.classList.add('pointer-events-none');
+
+            playCurrentAudio();
+
+            obs.querySelectorAll('button').forEach(b => {
+                if (b.innerText === item.t) { b.className = "w-full text-left py-4 px-6 rounded-2xl bg-emerald-600 border border-emerald-500 text-base font-medium text-white shadow-md"; }
+                else if (b === selectedBtn && !isCorrect) { b.className = "w-full text-left py-4 px-6 rounded-2xl bg-rose-600 border border-rose-500 text-base font-medium text-white"; }
+            });
+
+            if (isCorrect) {
+                qctx.innerHTML = `🎉 答对了！核心德语词汇是：<b class="text-xl text-indigo-600 block mt-1 tracking-wide">${item.w}</b>`;
+                playBeep(true); setTimeout(() => { currentIndex++; loadQuestion(); }, 3000);
+            } else {
+                card.classList.add('card-shake', 'border-rose-400');
+                qctx.innerHTML = `❌ 答错了，请记住正确德语词汇：<b class="text-xl text-emerald-600 block mt-1 tracking-wide">${item.w}</b>`;
+                playBeep(false); setTimeout(() => { card.classList.remove('card-shake', 'border-rose-400'); }, 400);
+                setTimeout(() => { currentIndex++; loadQuestion(); }, 3000);
+            }
+        }
+
+        function handleContextAnswer(isCorrect, selectedBtn, item) {
+            if (isVerifying) return; isVerifying = true;
+            const card = document.getElementById('arena-card'), obs = document.getElementById('options-box'), qtxt = document.getElementById('question-text'), qctx = document.getElementById('question-ctx');
+            obs.classList.add('pointer-events-none');
+
+            let highlightClass = isCorrect 
+                ? 'text-emerald-700 bg-emerald-100 border-b-2 border-emerald-500 px-2 py-0.5 rounded mx-1 font-bold'
+                : 'text-indigo-700 bg-indigo-50 border-b-2 border-indigo-500 px-2 py-0.5 rounded mx-1 font-bold';
+            qtxt.innerHTML = item.s.replace("______", `<span class="${highlightClass}">${item.a}</span>`);
+
+            obs.querySelectorAll('button').forEach(b => {
+                if (b.innerText === item.a) { b.className = "w-full text-left py-3 px-5 rounded-2xl bg-emerald-600 border border-emerald-500 text-base font-bold text-white shadow-md"; }
+                else if (b === selectedBtn && !isCorrect) { b.className = "w-full text-left py-3 px-5 rounded-2xl bg-rose-600 border border-rose-500 text-base font-bold text-white"; }
+            });
+
+            if (isCorrect) {
+                qctx.innerHTML = `🎉 答对了！请复习完整的德语表达：`;
+                playBeep(true);
+            } else {
+                card.classList.add('card-shake', 'border-rose-400');
+                qctx.innerHTML = `❌ 答错了，请仔细阅读完整的正确句子：`;
+                playBeep(false); 
+                setTimeout(() => { card.classList.remove('card-shake', 'border-rose-400'); }, 400);
+            }
+            setTimeout(() => { currentIndex++; loadQuestion(); }, 3000);
+        }
+
+        function playBeep(success) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator(), gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                if (success) {
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08);
+                    gain.gain.setValueAtTime(0.05, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                    osc.start(); osc.stop(ctx.currentTime + 0.25);
+                } else {
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(130, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.05, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                    osc.start(); osc.stop(ctx.currentTime + 0.25);
+                }
+            } catch(e){}
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.getVoices();
+            window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+        }
+
+        window.onload = () => { restartGame(); };
+    </script>
+</body>
+</html>
