@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>A1德语通关营 | 轻松搞定入门</title>
+    
+    <script>
+        // 🔒 大门检测：与 index.html 保持同步
+        if (localStorage.getItem('map_access') !== "Deutsch2026") {
+            window.location.href = "index.html";
+        }
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght=400;700;900&display=swap');
+        
+        body {
+            background-color: #F8FAFC;
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #1E293B;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 多邻国风卡片微动效 */
+        .premium-card {
+            background: #FFFFFF;
+            border: 2px solid #E2E8F0;
+            border-bottom: 5px solid #E2E8F0;
+            border-radius: 24px;
+            transition: all 0.15s ease;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .premium-card:hover {
+            border-color: #CBD5E1;
+            transform: translateY(-2px);
+        }
+
+        .premium-card:active {
+            transform: translateY(3px) scale(0.98);
+            border-bottom-width: 2px;
+        }
+
+        /* 居中单行大字水印 */
+        #watermark-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            opacity: 0.12;
+        }
+
+        .wm-text {
+            font-size: 32px;
+            font-weight: 900;
+            color: #000;
+            transform: rotate(-25deg);
+            white-space: nowrap;
+            user-select: none;
+            letter-spacing: 2px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #1E293B 0%, #475569 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="py-10 px-4">
+    <div id="watermark-layer">
+        <div class="wm-text">正版授权：gehtalles刘老师德语</div>
+    </div>
+
+    <div class="app-container max-w-[480px] mx-auto relative z-10">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-black gradient-text mb-2">A1德语通关营</h1>
+            <p class="text-sm text-slate-400 font-bold tracking-widest uppercase">A1 全内容・轻松学德语</p>
+            <div class="w-12 h-1 bg-green-500 rounded-full mx-auto mt-4"></div>
+        </header>
+
+        <main>
+            <div class="grid grid-cols-2 gap-4">
+                <div onclick="go(1)" class="premium-card p-5 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-[#58CC02] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">1</div>
+                    <h3 class="text-sm font-bold text-slate-800 leading-tight">名词词性捕手</h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">der / die / das</p>
+                </div>
+
+                <div onclick="go(2)" class="premium-card p-5 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-[#00D4FF] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">2</div>
+                    <h3 class="text-sm font-bold text-slate-800 leading-tight">词性规律一眼破</h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">Nomen-Regeln</p>
+                </div>
+
+                <div onclick="go(3)" class="premium-card p-5 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-[#A855F7] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">3</div>
+                    <h3 class="text-sm font-bold text-slate-800 leading-tight">复数实验室</h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">Plural</p>
+                </div>
+
+                <div onclick="go(4)" class="premium-card p-5 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-[#F59E0B] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">4</div>
+                    <h3 class="text-sm font-bold text-slate-800 leading-tight">弱变化动词</h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">Verbkonjugation</p>
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-12 text-center pb-10">
+            <p class="text-[11px] text-slate-300 font-medium">✨ Viel Erfolg! 祝学习愉快 ✨</p>
+        </footer>
+    </div>
+
+    <script>
+        // 路由分发器：后续加新关卡在这里加行就行
+        function go(n) {
+            const pages = {
+                1: '01-gender.html',
+                2: '02-classify.html',
+                3: '03-plural.html',
+                4: '04-verbs.html'
+                // 5: '05-xxx.html',  <-- 以后做好了这样往下加
+            };
+            if(pages[n]) window.location.href = pages[n];
+        }
+
+        // 安全机制：禁用页面右键菜单
+        document.oncontextmenu = function() { return false; };
+    </script>
+</body>
+</html>
