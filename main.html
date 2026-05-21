@@ -104,13 +104,19 @@
                 </div>
 
                 <div onclick="go(3)" class="premium-card p-5 flex flex-col items-center text-center">
-                    <div class="w-12 h-12 bg-[#00D4FF] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">3</div>
+                    <div class="w-12 h-12 bg-[#1CB0F6] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">3</div>
+                    <h3 class="text-sm font-bold text-slate-800 leading-tight">个人家庭，日常生活</h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">Kapitel 03</p>
+                </div>
+
+                <div onclick="go(4)" class="premium-card p-5 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-[#00D4FF] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">4</div>
                     <h3 class="text-sm font-bold text-slate-800 leading-tight">词性规律一眼破</h3>
                     <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">Nomen-Regeln</p>
                 </div>
 
-                <div onclick="go(4)" class="premium-card p-5 flex flex-col items-center text-center">
-                    <div class="w-12 h-12 bg-[#A855F7] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">4</div>
+                <div onclick="go(5)" class="premium-card p-5 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-[#A855F7] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">5</div>
                     <h3 class="text-sm font-bold text-slate-800 leading-tight">复数实验室</h3>
                     <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">Plural</p>
                 </div>
@@ -123,13 +129,14 @@
     </div>
 
     <script>
-        // 路由分发器：后续加新关卡在这里加行就行
+        // 路由分发器：管理关卡页面的跳转映射
         function go(n) {
             const pages = {
                 1: '1.html',
                 2: '2.html',
-                3: '02-classify.html',
-                4: '03-plural.html'
+                3: '3.html',               // 新增第3关关联到仓库的 3.html
+                4: '02-classify.html',      // 顺延至第4关
+                5: '03-plural.html'         // 顺延至第5关
             };
             if(pages[n]) window.location.href = pages[n];
         }
