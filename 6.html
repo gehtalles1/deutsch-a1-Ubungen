@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>德语A1词汇高效练习坊 — 饮食与餐饮篇 (DeutschBlitz)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .card-shake { animation: premium-shake 0.45s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes premium-shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+            40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+        .pop-in { animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        @keyframes popIn { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col justify-between overflow-x-hidden antialiased bg-orange-50/30">
+
+    <header class="p-4 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+        <div class="flex items-center space-x-3">
+            <button onclick="handleTap(); window.location.href='main.html'" class="py-1.5 px-3.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 font-bold rounded-xl text-xs transition-all border border-slate-200 shadow-sm">
+                ← 返回
+            </button>
+            <h1 class="text-sm font-black text-orange-600 tracking-wide">DeutschBlitz A1</h1>
+        </div>
+        <div class="text-slate-500 text-xs font-bold">
+            进度: <span id="progress-text" class="text-slate-700 font-black tabular-nums">0 / 10</span>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col items-center justify-center p-4 max-w-md w-full mx-auto">
+        <div class="w-full bg-slate-200 h-1.5 rounded-full mb-6 p-[1px] shadow-inner">
+            <div id="game-progress" class="bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 h-full w-0 rounded-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(249,115,22,0.3)]"></div>
+        </div>
+
+        <div id="arena-card" class="w-full bg-white rounded-[32px] p-6 shadow-[0_20px_50px_rgba(249,115,22,0.05)] border border-orange-100/80 relative flex flex-col items-center min-h-[450px] justify-between transition-all duration-300 transform">
+            <div class="w-full text-center py-1 flex flex-col items-center space-y-5">
+                <div id="question-ctx" class="text-xs font-bold tracking-wide bg-orange-50 border border-orange-200 text-orange-600 rounded-full px-3 py-1 min-h-[26px] flex items-center transition-all">
+                    正在准备美食词库...
+                </div>
+                <div id="question-text" class="text-3xl font-black text-slate-800 w-full min-h-[120px] flex items-center justify-center tracking-wide leading-loose px-2"></div>
+            </div>
+
+            <div id="options-box" class="w-full grid grid-cols-1 gap-3.5 mt-4"></div>
+
+            <div id="spell-box" class="w-full flex flex-col space-y-4 mt-4 hidden">
+                <div id="spell-preview" class="w-full text-center min-h-[56px] flex items-center justify-center flex-wrap gap-1 py-2 bg-slate-50 rounded-2xl border border-slate-200 px-3 shadow-inner"></div>
+                <div id="spell-chips" class="flex flex-wrap justify-center gap-2.5 pt-2"></div>
+                <div class="flex justify-center pt-1">
+                    <button onclick="undoLastSpell()" id="btn-undo" class="px-4 py-2 bg-slate-50 hover:bg-slate-100 active:scale-95 text-slate-500 font-bold text-xs rounded-xl transition-all border border-slate-200 shadow-sm flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 002-2H10.828a2 2 0 00-1.414.586L3 12z"/></svg>
+                        撤回一步
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="p-4 max-w-md w-full mx-auto flex gap-3.5 bg-white/70 backdrop-blur-md border-t border-slate-200 rounded-t-[24px] shadow-[0_-10px_30px_rgba(0,0,0,0.01)]">
+        <button onclick="switchMode('blitz')" id="btn-mode-blitz" class="flex-1 py-3 px-2 rounded-2xl text-xs font-black text-center transition-all duration-300 transform active:scale-95 shadow-sm">💡 词义辨析</button>
+        <button onclick="switchMode('spell')" id="btn-mode-spell" class="flex-1 py-3 px-2 rounded-2xl text-xs font-black text-center transition-all duration-300 transform active:scale-95 shadow-sm">🧩 字母拼词</button>
+        <button onclick="switchMode('context')" id="btn-mode-context" class="flex-1 py-3 px-2 rounded-2xl text-xs font-black text-center transition-all duration-300 transform active:scale-95 shadow-sm">📖 语境填空</button>
+    </footer>
+
+    <div id="settle-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xl flex items-center justify-center p-4 hidden z-50 transition-all duration-500">
+        <div class="bg-white border border-slate-200 p-8 rounded-[36px] w-full max-w-sm text-center shadow-2xl transform scale-95 transition-all pop-in">
+            <div class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-3xl animate-bounce">🍽️</span></div>
+            <h3 class="text-xl font-black text-slate-800 tracking-tight">本关饮食圆满！</h3>
+            <p class="text-slate-500 text-xs font-medium mt-2 mb-6 px-2 leading-relaxed">太棒了！本轮精选的 10 个“饮食与餐饮”德语 A1 核心词汇已完美通关。</p>
+            <button onclick="restartGame()" class="w-full bg-gradient-to-r from-orange-500 via-amber-500 to-rose-500 text-white font-black py-4 px-6 rounded-2xl shadow-lg hover:opacity-95 active:scale-95 transition-all tracking-wider text-sm">再吃一顿 (再练一局)</button>
+        </div>
+    </div>
+
+    <script>
+        const a1Vocabulary = [
+            // Mahlzeiten (餐饮)
+            {w:"die Mahlzeit", t:"一餐/饭菜", s:"Wir haben drei ______ am Tag.", a:"Mahlzeiten"},
+            {w:"das Frühstück", t:"早餐", s:"Zum ______ esse ich Brot.", a:"Frühstück"},
+            {w:"das Mittagessen", t:"午餐", s:"Das ______ ist um 12 Uhr.", a:"Mittagessen"},
+            {w:"das Abendessen", t:"晚餐", s:"Gibt es heute warmes ______?", a:"Abendessen"},
+            // Lokale (餐厅场所)
+            {w:"das Restaurant", t:"餐厅", s:"Wir essen heute im ______.", a:"Restaurant"},
+            {w:"das Café", t:"咖啡馆", s:"Wir trinken Kaffee im ______.", a:"Café"},
+            // Nahrungsmittel & Speisen (食品与菜肴)
+            {w:"das Lebensmittel", t:"食品", s:"Ich kaufe ______ im Supermarkt.", a:"Lebensmittel"},
+            {w:"das Brot", t:"面包", s:"Ich esse ein Stück ______.", a:"Brot"},
+            {w:"das Fleisch", t:"肉", s:"Ich bin Vegetarier, ich esse kein ______.", a:"Fleisch"},
+            {w:"das Obst", t:"水果", s:"Äpfel und Bananen sind ______.", a:"Obst"},
+            {w:"das Gemüse", t:"蔬菜", s:"Tomaten und Gurken sind ______.", a:"Gemüse"},
+            {w:"der Salat", t:"沙拉", s:"Ich esse gern frischen ______.", a:"Salat"},
+            {w:"die Suppe", t:"汤", s:"Die ______ ist sehr heiß und lecker.", a:"Suppe"},
+            // Getränke (饮料)
+            {w:"das Getränk", t:"饮料", s:"Was ist dein Lieblings-______?", a:"Getränk"},
+            {w:"der Kaffee", t:"咖啡", s:"Ich trinke ______ immer mit Milch.", a:"Kaffee"},
+            {w:"der Tee", t:"茶", s:"Eine Tasse ______ bitte.", a:"Tee"},
+            {w:"das Wasser", t:"水", s:"Ein Glas ______ bitte, ich habe Durst.", a:"Wasser"},
+            // 动作与综合 (Actions & Others)
+            {w:"essen", t:"吃", s:"Was ______ Sie gern zu Mittag?", a:"essen"},
+            {w:"trinken", t:"喝", s:"Was möchten Sie ______?", a:"trinken"},
+            {w:"die Speisekarte", t:"菜单", s:"Herr Ober, die ______ bitte!", a:"Speisekarte"}
+        ];
+
+        const SoundFX = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            play(type) {
+                try {
+                    this.init(); const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    if (type === 'correct') {
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, now);
+                        osc.frequency.setValueAtTime(659.25, now + 0.08);
+                        gain.gain.setValueAtTime(0.18, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                        osc.start(now); osc.stop(now + 0.3);
+                    } else if (type === 'incorrect') {
+                        osc.type = 'triangle'; osc.frequency.setValueAtTime(146.83, now);
+                        osc.frequency.linearRampToValueAtTime(98.00, now + 0.25);
+                        gain.gain.setValueAtTime(0.25, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                        osc.start(now); osc.stop(now + 0.25);
+                    } else if (type === 'tap') {
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(600, now);
+                        gain.gain.setValueAtTime(0.06, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                        osc.start(now); osc.stop(now + 0.05);
+                    }
+                } catch(e) {}
+            }
+        };
+
+        function triggerHaptic(type) {
+            if (!navigator.vibrate) return;
+            if (type === 'tap') navigator.vibrate(12);
+            else if (type === 'success') navigator.vibrate(35);
+            else if (type === 'error') navigator.vibrate([60, 40, 100]);
+        }
+
+        function handleTap() { SoundFX.play('tap'); triggerHaptic('tap'); }
+
+        let currentMode = 'blitz', currentIndex = 0, currentPool = [], isVerifying = false;
+        let answerProgress = [], clickedChipsStack = [], currentSlots = [], finalChunks = [];
+
+        function switchMode(mode) {
+            if (isVerifying) return; handleTap(); currentMode = mode;
+            ['blitz', 'spell', 'context'].forEach(m => {
+                const btn = document.getElementById(`btn-mode-${m}`);
+                if(btn) {
+                    btn.className = m === mode 
+                        ? "flex-1 py-3.5 px-2 rounded-2xl text-xs font-black text-center bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-md transition-all transform scale-[1.02]"
+                        : "flex-1 py-3.5 px-2 rounded-2xl text-xs font-bold text-center bg-slate-100 hover:bg-slate-200 text-slate-500 border border-slate-200 transition-all";
+                }
+            });
+            restartGame();
+        }
+
+        function restartGame() {
+            document.getElementById('settle-modal').classList.add('hidden');
+            currentIndex = 0; isVerifying = false;
+            currentPool = [...a1Vocabulary].sort(() => Math.random() - 0.5).slice(0, 10);
+            loadQuestion();
+        }
+
+        function updateDashboard() {
+            document.getElementById('progress-text').innerText = `${currentIndex} / ${currentPool.length}`;
+            document.getElementById('game-progress').style.width = `${(currentIndex / currentPool.length) * 100}%`;
+        }
+
+        function loadQuestion() {
+            if (currentIndex >= currentPool.length) { 
+                document.getElementById('settle-modal').classList.remove('hidden'); 
+                SoundFX.play('correct'); triggerHaptic('success');
+                return; 
+            }
+            updateDashboard(); isVerifying = false;
+
+            const item = currentPool[currentIndex], obs = document.getElementById('options-box'), spb = document.getElementById('spell-box'), qctx = document.getElementById('question-ctx'), qtxt = document.getElementById('question-text');
+            obs.innerHTML = ''; obs.classList.remove('pointer-events-none');
+            document.getElementById('spell-preview').innerHTML = ''; document.getElementById('spell-chips').innerHTML = '';
+            
+            const card = document.getElementById('arena-card');
+            card.classList.add('pop-in'); setTimeout(() => card.classList.remove('pop-in'), 400);
+
+            obs.classList.remove('hidden'); spb.classList.add('hidden');
+
+            // 模式一：词义辨析
+            if (currentMode === 'blitz') {
+                qctx.className = "text-xs font-black bg-orange-50 text-orange-700 rounded-full px-4 py-1.5 min-h-[26px]";
+                qctx.innerText = "💡 选出正确的饮食/餐饮释义";
+                qtxt.innerText = item.w;
+
+                let choices = [item.t];
+                while (choices.length < 4) {
+                    let r = a1Vocabulary[Math.floor(Math.random() * a1Vocabulary.length)].t;
+                    if (!choices.includes(r)) choices.push(r);
+                }
+                choices.sort(() => Math.random() - 0.5).forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left py-4 px-6 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/70 text-base font-bold transition-all active:scale-[0.98] text-slate-700 shadow-sm";
+                    btn.innerText = c;
+                    btn.onclick = () => handleBlitzAnswer(c === item.t, btn, item);
+                    obs.appendChild(btn);
+                });
+            } 
+            // 模式二：字母拼词
+            else if (currentMode === 'spell') {
+                qctx.className = "text-xs font-black bg-amber-50 text-amber-700 rounded-full px-4 py-1.5 min-h-[26px]";
+                qctx.innerText = "🧩 请根据释义拼写饮食相关的德语词";
+                qtxt.innerHTML = `<span class="text-xl font-black text-slate-800">${item.t}</span>`;
+                obs.classList.add('hidden'); spb.classList.remove('hidden');
+                
+                answerProgress = []; clickedChipsStack = []; currentSlots = []; finalChunks = [];
+                let art = "", main = item.w;
+                if (item.w.startsWith("der ") || item.w.startsWith("die ") || item.w.startsWith("das ")) { art = item.w.substring(0, 3); main = item.w.substring(4); }
+                if (art) finalChunks.push(art); for (let l of main) { if(l.trim()) finalChunks.push(l); }
+                
+                let groupWrapper = document.createElement('div');
+                groupWrapper.className = "inline-flex bg-slate-100 rounded-xl p-1 border border-slate-200 shadow-sm overflow-hidden font-black text-lg transition-all";
+                document.getElementById('spell-preview').appendChild(groupWrapper);
+
+                if (art) {
+                    let s = document.createElement('span'); s.className = "px-2.5 py-1 text-slate-300 min-w-[36px] text-center border-r border-slate-200 transition-all";
+                    s.innerText = "•••"; groupWrapper.appendChild(s); currentSlots.push(s);
+                }
+                for (let i = 0; i < main.length; i++) {
+                    if (!main[i].trim()) continue;
+                    let s = document.createElement('span');
+                    s.className = `px-1.5 py-1 text-slate-300 w-6 text-center ${i === main.length - 1 ? '' : 'border-r border-slate-200/60'} transition-all`;
+                    s.innerText = "•"; groupWrapper.appendChild(s); currentSlots.push(s);
+                }
+
+                [...finalChunks].sort(() => Math.random() - 0.5).forEach(ch => {
+                    const chip = document.createElement('button');
+                    chip.className = "py-2 px-4 rounded-xl bg-orange-50 border border-orange-200 hover:bg-orange-100 font-black text-lg text-orange-700 active:scale-90 shadow-sm transition-all";
+                    chip.innerText = ch;
+                    chip.onclick = () => {
+                        if (isVerifying) return; handleTap();
+                        chip.classList.add('opacity-0', 'pointer-events-none', 'scale-75');
+                        clickedChipsStack.push(chip);
+                        
+                        let ts = currentSlots[answerProgress.length]; ts.innerText = ch;
+                        ts.classList.replace('text-slate-300', 'text-orange-600');
+                        answerProgress.push(ch);
+
+                        if (answerProgress.length === finalChunks.length) {
+                            isVerifying = true;
+                            let userStr = art ? answerProgress[0] + " " + answerProgress.slice(1).join("") : answerProgress.join("");
+                            if (userStr === item.w) {
+                                SoundFX.play('correct'); triggerHaptic('success');
+                                currentSlots.forEach(s => { s.className = s.className.replace('text-orange-600', 'text-white bg-emerald-500 border-transparent'); });
+                                groupWrapper.className = "inline-flex bg-emerald-500 rounded-xl p-1 border border-emerald-600 shadow-md font-black text-lg transition-all transform scale-105";
+                                qctx.innerHTML = `<span class="text-emerald-600 font-black">🎉 饮食词汇拼写正确！</span>`;
+                                setTimeout(() => { currentIndex++; loadQuestion(); }, 2000);
+                            } else {
+                                SoundFX.play('incorrect'); triggerHaptic('error');
+                                card.classList.add('card-shake', 'border-rose-400');
+                                currentSlots.forEach(s => { s.className = s.className.replace('text-orange-600', 'text-white bg-rose-500 border-transparent'); });
+                                groupWrapper.className = "inline-flex bg-rose-500 rounded-xl p-1 border border-rose-600 shadow-md font-black text-lg transition-all";
+                                qctx.innerHTML = `❌ 正确钥匙是：<b class="text-emerald-600 text-sm block mt-0.5">${item.w}</b>`;
+                                setTimeout(() => { card.classList.remove('card-shake', 'border-rose-400'); }, 450);
+                                setTimeout(() => { isVerifying = false; loadQuestion(); }, 2500); 
+                            }
+                        }
+                    };
+                    document.getElementById('spell-chips').appendChild(chip);
+                });
+            } 
+            // 模式三：语境填空
+            else if (currentMode === 'context') {
+                qctx.className = "text-xs font-black bg-yellow-50 text-yellow-800 rounded-full px-4 py-1.5 min-h-[26px]";
+                qctx.innerText = "📖 观察餐饮场景描述，选择正确填空";
+                let borderSolid = 'inline-block min-w-[80px] border-b-2 border-slate-700 mx-1.5 h-1';
+                qtxt.innerHTML = `<div class="leading-loose text-center text-xl font-bold text-slate-800">${item.s.replace("______", `<span class="${borderSolid}"></span>`)}</div>`;
+
+                let choices = [item.a];
+                while (choices.length < 4) {
+                    let r = a1Vocabulary[Math.floor(Math.random() * a1Vocabulary.length)].a;
+                    if (!choices.includes(r)) choices.push(r);
+                }
+                choices.sort(() => Math.random() - 0.5).forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left py-3.5 px-5 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-base font-bold transition-all active:scale-[0.98] text-slate-700 shadow-sm";
+                    btn.innerText = c;
+                    btn.onclick = () => handleContextAnswer(c === item.a, btn, item);
+                    obs.appendChild(btn);
+                });
+            }
+        }
+
+        function undoLastSpell() {
+            if (isVerifying || clickedChipsStack.length === 0) return;
+            handleTap();
+            const lastChip = clickedChipsStack.pop();
+            lastChip.classList.remove('opacity-0', 'pointer-events-none', 'scale-75');
+            answerProgress.pop();
+            let targetSpan = currentSlots[answerProgress.length];
+            targetSpan.innerText = finalChunks[answerProgress.length].length > 1 ? "•••" : "•";
+            targetSpan.className = targetSpan.className.replace('text-orange-600', 'text-slate-300');
+        }
+
+        function handleBlitzAnswer(isCorrect, selectedBtn, item) {
+            if (isVerifying) return; isVerifying = true;
+            const obs = document.getElementById('options-box'), qctx = document.getElementById('question-ctx');
+            obs.classList.add('pointer-events-none');
+
+            obs.querySelectorAll('button').forEach(b => {
+                if (b.innerText === item.t) { b.className = "w-full text-left py-4 px-6 rounded-2xl bg-emerald-500 border border-emerald-400 text-base font-black text-white shadow-md ring-4 ring-emerald-100 transition-all"; }
+                else if (b === selectedBtn && !isCorrect) { b.className = "w-full text-left py-4 px-6 rounded-2xl bg-rose-500 border border-rose-400 text-base font-black text-white shadow-sm"; }
+                else { b.className = "w-full text-left py-4 px-6 rounded-2xl bg-slate-50 border border-slate-200 opacity-40 text-slate-400 text-base font-medium"; }
+            });
+
+            if (isCorrect) {
+                SoundFX.play('correct'); triggerHaptic('success');
+                qctx.innerHTML = `<span class="text-emerald-500 font-black">✨ 饮食释义完全正确！</span>`;
+                setTimeout(() => { currentIndex++; loadQuestion(); }, 1200);
+            } else {
+                SoundFX.play('incorrect'); triggerHaptic('error');
+                qctx.innerHTML = `正确释义是：<b class="text-emerald-500 font-black ml-1">${item.t}</b>`;
+                setTimeout(() => { currentIndex++; loadQuestion(); }, 2000);
+            }
+        }
+
+        function handleContextAnswer(isCorrect, selectedBtn, item) {
+            if (isVerifying) return; isVerifying = true;
+            const card = document.getElementById('arena-card'), obs = document.getElementById('options-box'), qtxt = document.getElementById('question-text'), qctx = document.getElementById('question-ctx');
+            obs.classList.add('pointer-events-none');
+
+            let textClass = isCorrect ? 'text-emerald-600 bg-emerald-50/80 border-b-2 border-emerald-500 px-3 py-0.5 rounded-lg mx-1 font-black shadow-sm' : 'text-rose-600 bg-rose-50/80 border-b-2 border-rose-500 px-3 py-0.5 rounded-lg mx-1 font-black shadow-sm';
+            qtxt.innerHTML = `<div class="leading-loose text-center text-xl font-bold text-slate-800">${item.s.replace("______", `<span class="${textClass}">${item.a}</span>`)}</div>`;
+
+            obs.querySelectorAll('button').forEach(b => {
+                if (b.innerText === item.a) { b.className = "w-full text-left py-3.5 px-5 rounded-2xl bg-emerald-500 border border-emerald-400 text-base font-black text-white shadow-md ring-4 ring-emerald-100 transition-all"; }
+                else if (b === selectedBtn && !isCorrect) { b.className = "w-full text-left py-3.5 px-5 rounded-2xl bg-rose-500 border border-rose-400 text-base font-black text-white shadow-sm"; }
+                else { b.className = "w-full text-left py-3.5 px-5 rounded-2xl bg-slate-50 border border-slate-200 opacity-40 text-slate-400 text-base font-medium"; }
+            });
+
+            if (isCorrect) {
+                SoundFX.play('correct'); triggerHaptic('success');
+                qctx.innerHTML = `<span class="text-emerald-600 font-black">🎉 语境判断无误！</span>`;
+            } else {
+                SoundFX.play('incorrect'); triggerHaptic('error');
+                card.classList.add('card-shake', 'border-rose-400');
+                qctx.innerHTML = `<span class="text-rose-500 font-black">⚡ 请留意正确用法！</span>`;
+                setTimeout(() => { card.classList.remove('card-shake', 'border-rose-400'); }, 450);
+            }
+            setTimeout(() => { currentIndex++; loadQuestion(); }, 2500);
+        }
+
+        window.onload = () => { switchMode('blitz'); };
+    </script>
+</body>
+</html>
