@@ -14,7 +14,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght=400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
         
         body {
             background-color: #F8FAFC;
@@ -128,11 +128,18 @@
                 </div>
 
                 <div onclick="go(7)" class="premium-card p-5 flex flex-col items-center text-center">
-                    <div class="w-12 h-12 bg-[#00D4FF] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">7</div>
+                    <div class="w-12 h-12 bg-[#0EA5E9] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">7</div>
+                    <h3 class="text-sm font-bold text-slate-800 leading-tight">旅行与交通</h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">Kapitel 07</p>
+                </div>
+
+                <div onclick="go(8)" class="premium-card p-5 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-[#00D4FF] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">8</div>
                     <h3 class="text-sm font-bold text-slate-800 leading-tight">词性规律一眼破</h3>
                     <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">Nomen-Regeln</p>
                 </div>
-            </div>
+
+                </div>
         </main>
 
         <footer class="mt-12 text-center pb-10">
@@ -149,8 +156,10 @@
                 3: '3.html',
                 4: '4.html',
                 5: '5.html',
-                6: '6.html',           // 第6关关联至 6.html
-                7: '02-classify.html'  // 原有关卡顺延至第7关
+                6: '6.html',
+                7: '7.html',           // 第7关关联至 7.html
+                8: '02-classify.html', // 原有关卡顺延至第8关
+                9: '03-plural.html'    // 若有复数实验室，可顺延至第9关
             };
             if(pages[n]) window.location.href = pages[n];
         }
