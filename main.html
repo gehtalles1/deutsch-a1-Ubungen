@@ -244,6 +244,18 @@
                     </p>
                 </div>
 
+                <div onclick="go(13)" class="premium-card p-5 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-[#FF5A5F] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">
+                        13
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-800 leading-tight">
+                        身体与疾病
+                    </h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">
+                        Körper & Krankheit
+                    </p>
+                </div>
+
             </div>
         </main>
 
@@ -256,7 +268,7 @@
     </div>
 
     <script>
-        // 路由分发器：管理关卡页面跳转（已清理预留测试关）
+        // 路由分发器：管理关卡页面跳转（已成功关联第 13 关）
         function go(n) {
             const pages = {
                 1: '1.html',
@@ -270,7 +282,8 @@
                 9: '9.html',
                 10: '10.html',
                 11: '11.html',
-                12: '12.html'
+                12: '12.html',
+                13: '13.html'
             };
 
             if (pages[n]) {
