@@ -128,7 +128,7 @@
                     <div class="w-12 h-12 bg-[#1CB0F6] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">
                         3
                     </div>
-                    <h3 class="text-sm font-bold text-slate-800 leading-tight">
+                    <h3 class="text-sm font-bold text-slate-800 prepend-emoji leading-tight">
                         个人家庭，日常生活
                     </h3>
                     <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">
@@ -256,7 +256,6 @@
                     </p>
                 </div>
 
-                <!-- 🎉 新增第 14 关：节日与庆祝 -->
                 <div onclick="go(14)" class="premium-card p-5 flex flex-col items-center text-center">
                     <div class="w-12 h-12 bg-[#F59E0B] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">
                         14
@@ -266,6 +265,18 @@
                     </h3>
                     <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">
                         Feste & Feiern
+                    </p>
+                </div>
+
+                <div onclick="go(15)" class="premium-card p-5 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-[#D946EF] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">
+                        15
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-800 leading-tight">
+                        旅行问路与交通
+                    </h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">
+                        Nach dem Weg fragen
                     </p>
                 </div>
 
@@ -281,7 +292,7 @@
     </div>
 
     <script>
-        // 路由分发器：管理关卡页面跳转（已成功关联第 14 关）
+        // 路由分发器：管理关卡页面跳转（已成功关联第 14 及第 15 关）
         function go(n) {
             const pages = {
                 1: '1.html',
@@ -297,7 +308,8 @@
                 11: '11.html',
                 12: '12.html',
                 13: '13.html',
-                14: '14.html'
+                14: '14.html',
+                15: '15.html'
             };
 
             if (pages[n]) {
