@@ -280,6 +280,19 @@
                     </p>
                 </div>
 
+                <!-- 🆕 第 16 关：邀请与应答 -->
+                <div onclick="go(16)" class="premium-card p-5 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-[#4F46E5] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-inner">
+                        16
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-800 leading-tight">
+                        邀请与应答
+                    </h3>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">
+                        Einladung & Antwort
+                    </p>
+                </div>
+
             </div>
         </main>
 
@@ -292,7 +305,7 @@
     </div>
 
     <script>
-        // 路由分发器：管理关卡页面跳转（已成功关联第 14 及第 15 关）
+        // 路由分发器：管理关卡页面跳转（已成功关联第 14、15 及第 16 关）
         function go(n) {
             const pages = {
                 1: '1.html',
@@ -309,7 +322,8 @@
                 12: '12.html',
                 13: '13.html',
                 14: '14.html',
-                15: '15.html'
+                15: '15.html',
+                16: '16.html' // 关联新增的第 16 关
             };
 
             if (pages[n]) {
